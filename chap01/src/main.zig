@@ -100,6 +100,7 @@ pub fn main() !void {
             adapter = adap.Next;
         }
     }
+    if (ret_err) |err| return err;
 }
 
 fn indexOfSentinel(comptime T: type, ptr: [*]const T, value: T) usize {
