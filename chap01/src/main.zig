@@ -15,6 +15,9 @@ const GAA_FLAG_INCLUDE_PREFIX = ip_helper.GAA_FLAG_INCLUDE_PREFIX;
 const ERROR_BUFFER_OVERFLOW = win32.everything.ERROR_BUFFER_OVERFLOW;
 const ERROR_SUCCESS = win32.everything.ERROR_SUCCESS;
 const WIN32_ERROR = win32.everything.WIN32_ERROR;
+const AF_INET = win32.everything.AF_INET;
+const getnameinfo = win32.everything.getnameinfo;
+const NI_NUMERICHOST = win32.everything.NI_NUMERICHOST;
 
 pub extern "IPHLPAPI" fn GetAdaptersAddresses(
     Family: ADDRESS_FAMILY,
@@ -59,13 +62,41 @@ pub fn main() !void {
 
         var adapter = adapters;
         while (adapter) |adap| {
-            std.debug.print("iftype={}", .{adap.IfType});
-            if (adap.FriendlyName) |name_u16| {
-                const name_len = indexOfSentinel(u16, name_u16, 0);
-                const name = name_u16[0..name_len];
-                std.debug.print(", name={}", .{std.unicode.fmtUtf16le(name)});
+            if (adap.FriendlyName == null) {
+                return error.NullAdapterName;
             }
-            std.debug.print("\n", .{});
+            const name_u16 = adap.FriendlyName.?;
+            const name_len = indexOfSentinel(u16, name_u16, 0);
+            const name = name_u16[0..name_len];
+            std.debug.print("name={}\n", .{std.unicode.fmtUtf16le(name)});
+
+            var address = adap.FirstUnicastAddress;
+            while (address) |addr| {
+                const family = if (@as(u32, addr.Address.lpSockaddr.?.sa_family) == @enumToInt(AF_INET))
+                    "IPv4"
+                else
+                    "IPv6";
+                std.debug.print("\t{s}", .{family});
+
+                var ap: [100]u8 = undefined;
+                var ap_s = ap[0..];
+                const r = getnameinfo(
+                    addr.Address.lpSockaddr.?,
+                    addr.Address.iSockaddrLength,
+                    ap_s,
+                    @sizeOf(@TypeOf(ap)),
+                    null,
+                    0,
+                    NI_NUMERICHOST,
+                );
+                if (r != 0) {
+                    return error.getnameinfo;
+                }
+                const ap_len = indexOfSentinel(u8, ap_s, 0);
+                std.debug.print("\t{s}\n", .{ap[0..ap_len]});
+
+                address = addr.Next;
+            }
             adapter = adap.Next;
         }
     }
