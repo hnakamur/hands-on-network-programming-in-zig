@@ -1,0 +1,6 @@
+id: 6v21u31s6tvkbv5525hu46qjevicd37zja4hc0sosfrn1ihd
+name: chap01
+license: MIT
+description: list network adapters
+root_dependencies:
+  - src: git https://github.com/marlersoft/zigwin32
