@@ -62,6 +62,13 @@ pub fn build(b: *std.build.Builder) void {
             .run_step_name = "run-chap02-ipv6",
             .run_step_description = "Run the chap02_time_server_ipv6 app",
         },
+        .{
+            .exe_name = "chap02_time_server_dual",
+            .win_src = "chap02/time_server_dual_windows.zig",
+            .linux_src = "chap02/time_server_dual_linux.zig",
+            .run_step_name = "run-chap02-dual",
+            .run_step_description = "Run the chap02_time_server_dual app",
+        },
     };
     for (infos) |info| {
         const exe = b.addExecutable(
