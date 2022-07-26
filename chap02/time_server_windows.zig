@@ -8,6 +8,7 @@ const AI_PASSIVE = win32.everything.AI_PASSIVE;
 const closesocket = win32.everything.closesocket;
 const INVALID_SOCKET = win32.everything.INVALID_SOCKET;
 const WSAGetLastError = win32.everything.WSAGetLastError;
+const GetLastError = win32.everything.GetLastError;
 const c = @cImport({
     @cInclude("string.h");
     @cInclude("time.h");
@@ -128,7 +129,7 @@ pub fn main() !void {
 
         var timer: c.time_t = undefined;
         if (c.time(&timer) < 0) {
-            std.debug.print("time() failed. ({})\n", .{WSAGetLastError()});
+            std.debug.print("time() failed. ({})\n", .{GetLastError()});
             return error.Send;
         }
         const time_msg = c.ctime(&timer);
