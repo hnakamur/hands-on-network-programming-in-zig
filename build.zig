@@ -14,9 +14,9 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const exe = b.addExecutable("chap01", if (builtin.os.tag == .windows)
-        "src/main_windows.zig"
+        "chap01/src/main_windows.zig"
     else
-        "src/main_linux.zig");
+        "chap01/src/main_linux.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
     if (builtin.os.tag != .windows) {
@@ -31,6 +31,6 @@ pub fn build(b: *std.build.Builder) void {
         run_cmd.addArgs(args);
     }
 
-    const run_step = b.step("run", "Run the app");
+    const run_step = b.step("run-chap01", "Run the chap01 app");
     run_step.dependOn(&run_cmd.step);
 }
