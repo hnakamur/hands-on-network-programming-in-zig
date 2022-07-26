@@ -13,24 +13,46 @@ pub fn build(b: *std.build.Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
-    const exe = b.addExecutable("chap01", if (builtin.os.tag == .windows)
-        "chap01/src/main_windows.zig"
-    else
-        "chap01/src/main_linux.zig");
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
-    if (builtin.os.tag != .windows) {
-        exe.linkLibC();
-    }
-    deps.addAllTo(exe);
-    exe.install();
+    {
+        const exe = b.addExecutable("chap01", if (builtin.os.tag == .windows)
+            "chap01/main_windows.zig"
+        else
+            "chap01/main_linux.zig");
+        exe.setTarget(target);
+        exe.setBuildMode(mode);
+        if (builtin.os.tag != .windows) {
+            exe.linkLibC();
+        }
+        deps.addAllTo(exe);
+        exe.install();
 
-    const run_cmd = exe.run();
-    run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
+        const run_cmd = exe.run();
+        run_cmd.step.dependOn(b.getInstallStep());
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
+
+        const run_step = b.step("run-chap01", "Run the chap01 app");
+        run_step.dependOn(&run_cmd.step);
     }
 
-    const run_step = b.step("run-chap01", "Run the chap01 app");
-    run_step.dependOn(&run_cmd.step);
+    {
+        const exe = b.addExecutable("chap02_time_server", "chap02/time_server.zig");
+        exe.setTarget(target);
+        exe.setBuildMode(mode);
+        if (builtin.os.tag != .windows) {
+            exe.linkLibC();
+        }
+        deps.addAllTo(exe);
+        exe.install();
+
+        const run_cmd = exe.run();
+        run_cmd.step.dependOn(b.getInstallStep());
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
+
+        const run_step = b.step("run-chap02", "Run the chap02 app");
+        run_step.dependOn(&run_cmd.step);
+    }
 }
