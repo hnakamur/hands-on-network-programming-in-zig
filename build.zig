@@ -37,12 +37,13 @@ pub fn build(b: *std.build.Builder) void {
     }
 
     {
-        const exe = b.addExecutable("chap02_time_server", "chap02/time_server.zig");
+        const exe = b.addExecutable("chap02_time_server", if (builtin.os.tag == .windows)
+            "chap02/time_server_windows.zig"
+        else
+            "chap02/time_server_linux.zig");
         exe.setTarget(target);
         exe.setBuildMode(mode);
-        if (builtin.os.tag != .windows) {
-            exe.linkLibC();
-        }
+        exe.linkLibC();
         deps.addAllTo(exe);
         exe.install();
 
