@@ -140,7 +140,9 @@ pub fn main() !void {
                 "Received ({} bytes): {s}\n",
                 .{ bytes_received, read_buf[0..@intCast(usize, bytes_received)] },
             );
-        } else if (reads.isSet(stdin_fd)) {
+        }
+        
+        if (reads.isSet(stdin_fd)) {
             var read_buf: [4096]u8 = undefined;
             const n = try std.os.read(stdin_fd, read_buf[0..]);
             if (n == 0) {
