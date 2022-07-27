@@ -43,7 +43,7 @@ pub fn build(b: *std.build.Builder) void {
             run_cmd.addArgs(args);
         }
 
-        const run_step = b.step("run-chap01", "Run the chap01 app");
+        const run_step = b.step("run_chap01", "Run the chap01 app");
         run_step.dependOn(&run_cmd.step);
     }
 
@@ -52,22 +52,29 @@ pub fn build(b: *std.build.Builder) void {
             .exe_name = "chap02_time_server",
             .win_src = "chap02/time_server_windows.zig",
             .linux_src = "chap02/time_server_linux.zig",
-            .run_step_name = "run-chap02",
+            .run_step_name = "run_chap02_time_server",
             .run_step_description = "Run the chap02_time_server app",
         },
         .{
             .exe_name = "chap02_time_server_ipv6",
             .win_src = "chap02/time_server_ipv6_windows.zig",
             .linux_src = "chap02/time_server_ipv6_linux.zig",
-            .run_step_name = "run-chap02-ipv6",
+            .run_step_name = "run_chap02_time_server_ipv6",
             .run_step_description = "Run the chap02_time_server_ipv6 app",
         },
         .{
             .exe_name = "chap02_time_server_dual",
             .win_src = "chap02/time_server_dual_windows.zig",
             .linux_src = "chap02/time_server_dual_linux.zig",
-            .run_step_name = "run-chap02-dual",
+            .run_step_name = "run_chap02_time_server_dual",
             .run_step_description = "Run the chap02_time_server_dual app",
+        },
+        .{
+            .exe_name = "chap03_tcp_client",
+            .win_src = "chap03/tcp_client_windows.zig",
+            .linux_src = "chap03/tcp_client_linux.zig",
+            .run_step_name = "run_chap03_tcp_client",
+            .run_step_description = "Run the chap03_tcp_client app",
         },
     };
     for (infos) |info| {
