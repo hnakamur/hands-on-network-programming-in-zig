@@ -76,6 +76,13 @@ pub fn build(b: *std.build.Builder) void {
             .run_step_name = "run_chap03_tcp_client",
             .run_step_description = "Run the chap03_tcp_client app",
         },
+        .{
+            .exe_name = "chap03_tcp_serve_toupper",
+            .win_src = "chap03/tcp_serve_toupper_windows.zig",
+            .linux_src = "chap03/tcp_serve_toupper_linux.zig",
+            .run_step_name = "run_chap03_tcp_serve_toupper",
+            .run_step_description = "Run the chap03_tcp_serve_toupper app",
+        },
     };
     for (infos) |info| {
         const exe = b.addExecutable(
