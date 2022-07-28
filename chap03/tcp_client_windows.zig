@@ -17,6 +17,8 @@ pub extern "ws2_32" fn __WSAFDIsSet(
     fds: ?*ws2_32.fd_set,
 ) callconv(windows.WINAPI) i32;
 
+pub extern "msvcrt" fn _kbhit() callconv(windows.WINAPI) i32;
+
 fn getHostnamePortArgs(
     allocator: std.mem.Allocator,
     hostname: *[:0]const u8,
@@ -180,8 +182,7 @@ pub fn main() !void {
                 );
             }
 
-            // TODO: Currently, we need to input Ctrl-Z for the second time.
-            if (windows.WaitForSingleObject(stdin, 0)) |_| {
+            if (_kbhit() != 0) {
                 std.debug.print("stdin read ready.\n", .{});
 
                 var read_buf: [4096]u8 = undefined;
@@ -194,11 +195,6 @@ pub fn main() !void {
                 if (bytes_sent < 0) {
                     std.debug.print("send() failed. ({})\n", .{WSAGetLastError()});
                     return error.Send;
-                }
-            } else |err| {
-                switch (err) {
-                    error.WaitTimeOut => {},
-                    else => return err,
                 }
             }
         }
