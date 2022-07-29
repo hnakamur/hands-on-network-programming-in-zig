@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const c = @cImport({
     @cInclude("sys/select.h");
 });
@@ -67,10 +68,23 @@ pub fn main() !void {
     }
     defer std.c.freeaddrinfo(peer_address);
 
+    const numeric_host = switch (builtin.os.tag) {
+        .linux => std.c.NI.NUMERICHOST,
+        .macos => 0x00000002, // should be defined in std.c.darwin.NI.NUMERICHOST
+        else => @panic("NUMERICHOST is not yet defined for this OS"),
+    };
     std.debug.print("Remote address is: ", .{});
     var address_buffer: [100]u8 = undefined;
     var service_buffer: [100]u8 = undefined;
-    const r2 = std.c.getnameinfo(@ptrCast(*std.c.sockaddr, peer_address.addr), peer_address.addrlen, address_buffer[0..], @sizeOf(@TypeOf(address_buffer)), service_buffer[0..], @sizeOf(@TypeOf(service_buffer)), std.c.NI.NUMERICHOST);
+    const r2 = std.c.getnameinfo(
+        @ptrCast(*std.c.sockaddr, peer_address.addr),
+        peer_address.addrlen,
+        address_buffer[0..],
+        @sizeOf(@TypeOf(address_buffer)),
+        service_buffer[0..],
+        @sizeOf(@TypeOf(service_buffer)),
+        numeric_host,
+    );
     std.debug.print("r2={}\n", .{@enumToInt(r2)});
     if (@enumToInt(r2) != 0) {
         std.debug.print("getnameinfo() failed. ({})\n", .{std.c._errno().*});
@@ -141,7 +155,7 @@ pub fn main() !void {
                 .{ bytes_received, read_buf[0..@intCast(usize, bytes_received)] },
             );
         }
-        
+
         if (reads.isSet(stdin_fd)) {
             var read_buf: [4096]u8 = undefined;
             const n = try std.os.read(stdin_fd, read_buf[0..]);
