@@ -1,6 +1,5 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const is_windows = builtin.os.tag == .windows;
 const IPv6 = std.x.os.IPv6;
 const Socket = std.x.os.Socket;
 const c = @cImport({
@@ -40,7 +39,9 @@ pub fn main() !void {
     defer socket_listen.deinit();
 
     // V6Only is need to set to be false explicitly on Windows for dual bind in IPv4 and IPv6.
-    try setV6Only(socket_listen, false);
+    if (builtin.os.tag == .linux or builtin.os.tag == .windows) {
+        try setV6Only(socket_listen, false);
+    }
     try socket_listen.bind(bind_address);
     try socket_listen.listen(10);
     var conn = try socket_listen.accept(.{});
@@ -71,7 +72,7 @@ pub fn main() !void {
 }
 
 fn setV6Only(socket: Socket, enabled: bool) !void {
-    const level = if (is_windows)
+    const level = if (builtin.os.tag == .windows)
         41 // should be defined as std.os.windows.ws2_32.IPPROTO.IPV6
     else
         std.os.IPPROTO.IPV6;
