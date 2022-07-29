@@ -47,6 +47,11 @@ pub fn main() !void {
         }
         defer c.freeaddrinfo(bind_address);
 
+        std.debug.print("family={}, socktype={}, protocol={}\n", .{
+            bind_address.?.ai_family,
+            bind_address.?.ai_socktype,
+            bind_address.?.ai_protocol,
+        });
         std.debug.print("Creating socket...\n", .{});
         var socket_listen = c.socket(
             bind_address.?.ai_family,
@@ -69,8 +74,17 @@ pub fn main() !void {
             std.debug.print("setsockopt() failed. ({})\n", .{WSAGetLastError()});
             return error.SetSockOpt;
         }
+        std.debug.print("c.IPPROTO_IPV6={}, c.IPV6_V6ONLY={}\n", .{ c.IPPROTO_IPV6, c.IPV6_V6ONLY });
 
         std.debug.print("Binding socket to local address...\n", .{});
+        var addr6 = @intToPtr(*std.os.sockaddr.in6, @ptrToInt(bind_address.?.ai_addr));
+        std.debug.print("addr.family={}, port={}, flowinfo={}, addr={}, scope_id={}\n", .{
+            addr6.family,
+            addr6.port,
+            addr6.flowinfo,
+            std.fmt.fmtSliceHexLower(addr6.addr[0..]),
+            addr6.scope_id,
+        });
         if (c.bind(
             socket_listen,
             bind_address.?.ai_addr,

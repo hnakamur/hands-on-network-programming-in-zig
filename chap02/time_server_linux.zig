@@ -28,6 +28,11 @@ pub fn main() !void {
         @panic("getaddrinfo");
     }
     defer c.freeaddrinfo(bind_address);
+    std.debug.print("family={}, socktype={}, protocol={}\n", .{
+        bind_address.?.ai_family,
+        bind_address.?.ai_socktype,
+        bind_address.?.ai_protocol,
+    });
 
     std.debug.print("Creating socket...\n", .{});
     var socket_listen = c.socket(
@@ -107,7 +112,7 @@ pub fn main() !void {
     var timer: c.time_t = undefined;
     if (c.time(&timer) < 0) {
         std.debug.print("time() failed. ({})\n", .{std.c._errno().*});
-        return error.Send;
+        return error.Time;
     }
     const time_msg = c.ctime(&timer);
     bytes_sent = c.send(socket_client, time_msg, c.strlen(time_msg), 0);

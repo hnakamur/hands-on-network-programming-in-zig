@@ -47,6 +47,15 @@ pub fn build(b: *std.build.Builder) void {
         run_step.dependOn(&run_cmd.step);
     }
 
+    {
+        const exe = b.addExecutable("time_server_dual", "chap02/time_server_dual.zig");
+        exe.setTarget(target);
+        exe.setBuildMode(mode);
+        exe.linkLibC();
+        deps.addAllTo(exe);
+        exe.install();
+    }
+
     const infos = [_]BuildRunStepInfo{
         .{
             .exe_name = "chap02_time_server",
