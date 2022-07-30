@@ -18,11 +18,14 @@ pub const FdSet = struct {
         i: usize,
 
         pub fn next(self: *SetSocketIterator) ?std.os.socket_t {
-            const socket = if (self.i < self.fd_set.fd_count)
-                self.fd_set.fd_array[self.i]
-            else
-                null;
-            self.i += 1;
+            var socket: ?std.os.socket_t = ws2_32.INVALID_SOCKET;
+            while (socket == ws2_32.INVALID_SOCKET) {
+                socket = if (self.i < self.fd_set.inner.fd_count)
+                    self.fd_set.inner.fd_array[self.i]
+                else
+                    null;
+                self.i += 1;
+            }
             return socket;
         }
     };
