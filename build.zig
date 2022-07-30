@@ -2,12 +2,24 @@ const std = @import("std");
 const builtin = @import("builtin");
 const deps = @import("./deps.zig");
 
+const BuildExeInfo = struct {
+    exe_name: []const u8,
+    src: []const u8,
+};
+
 const BuildRunStepInfo = struct {
     exe_name: []const u8,
     win_src: []const u8,
     linux_src: []const u8,
     run_step_name: []const u8,
     run_step_description: []const u8,
+};
+
+const pkgs = struct {
+    const lib = std.build.Pkg{
+        .name = "lib",
+        .source = .{ .path = "./lib/main.zig" },
+    };
 };
 
 pub fn build(b: *std.build.Builder) void {
@@ -47,12 +59,22 @@ pub fn build(b: *std.build.Builder) void {
         run_step.dependOn(&run_cmd.step);
     }
 
-    {
-        const exe = b.addExecutable("time_server_dual", "chap02/time_server_dual.zig");
+    const lib = b.addStaticLibrary(pkgs.lib.name, pkgs.lib.source.path);
+    lib.setTarget(target);
+    lib.setBuildMode(mode);
+    lib.linkLibC();
+    lib.install();
+
+    const exe_infos = [_]BuildExeInfo{
+        .{ .exe_name = "time_server_dual", .src = "chap02/time_server_dual.zig" },
+        .{ .exe_name = "tcp_client", .src = "chap03/tcp_client.zig" },
+    };
+    for (exe_infos) |info| {
+        const exe = b.addExecutable(info.exe_name, info.src);
         exe.setTarget(target);
         exe.setBuildMode(mode);
         exe.linkLibC();
-        deps.addAllTo(exe);
+        exe.addPackage(pkgs.lib);
         exe.install();
     }
 
