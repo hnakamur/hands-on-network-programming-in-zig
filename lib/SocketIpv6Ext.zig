@@ -16,9 +16,5 @@ pub fn setV6OnlyOrNop(self: std.x.os.Socket, enabled: bool) !void {
         else => unreachable,
     };
 
-    std.log.debug(
-        "SocketIpv6Ext.setV6OnlyOrNop level={}, code={}, enabled={}",
-        .{ level, code, enabled },
-    );
     return self.setOption(level, code, std.mem.asBytes(&@as(u32, @boolToInt(enabled))));
 }

@@ -12,25 +12,6 @@ const log_level = std.log.debug;
 
 pub fn main() !void {
     const bind_address = try SocketAddressExt.parse("::", 8080);
-    std.debug.print("bind_address={}\n", .{bind_address});
-    std.debug.print("bind_address.ipv6.port={}, addr={}, scope_id={}\n", .{
-        bind_address.ipv6.port,
-        std.fmt.fmtSliceHexLower(bind_address.ipv6.host.octets[0..]),
-        bind_address.ipv6.host.scope_id,
-    });
-    const native_address = bind_address.toNative();
-    std.debug.print("native_address.port={}, flowinfo={}, addr={}, scope_id={}\n", .{
-        std.mem.bigToNative(u16, native_address.ipv6.port),
-        native_address.ipv6.flowinfo,
-        std.fmt.fmtSliceHexLower(native_address.ipv6.addr[0..]),
-        native_address.ipv6.scope_id,
-    });
-
-    std.debug.print("family={}, socktype={}, protocol={}\n", .{
-        std.os.AF.INET6,
-        std.os.SOCK.STREAM,
-        0,
-    });
     var socket_listen = try Socket.init(
         std.os.AF.INET6,
         std.os.SOCK.STREAM,
@@ -46,6 +27,7 @@ pub fn main() !void {
     try SocketIpv6Ext.setV6OnlyOrNop(socket_listen, false);
     try socket_listen.bind(bind_address);
     try socket_listen.listen(10);
+    std.debug.print("Waiting for a client connection.\n", .{});
     var conn = try socket_listen.accept(.{});
     defer conn.socket.deinit();
     std.debug.print("Client is connected from {}\n", .{conn.address});
