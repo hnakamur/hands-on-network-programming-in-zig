@@ -39,6 +39,10 @@ pub fn main() !void {
     );
     defer socket_listen.deinit();
 
+    try socket_listen.setReuseAddress(true);
+    if (builtin.os.tag != .windows) {
+        try socket_listen.setReusePort(true);
+    }
     try SocketIpv6Ext.setV6OnlyOrNop(socket_listen, false);
     try socket_listen.bind(bind_address);
     try socket_listen.listen(10);
