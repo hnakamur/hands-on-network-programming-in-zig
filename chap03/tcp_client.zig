@@ -27,10 +27,39 @@ pub fn main() !void {
     const peer_address = try parseSocketAddress(host, port);
     std.debug.print("peer_address={}\n", .{peer_address});
 
+    {
+        const native_addr = @ptrCast(*const std.os.sockaddr, &peer_address.toNative());
+        switch (native_addr.family) {
+            std.os.AF.INET => {
+                const v4addr = @ptrCast(*const std.os.sockaddr.in, native_addr);
+                std.log.debug("native peer_address v4 family={}, port={}, addr={}", .{
+                    v4addr.family,
+                    v4addr.port,
+                    v4addr.addr,
+                });
+            },
+            std.os.AF.INET6 => {
+                const v6addr = @ptrCast(*const std.os.sockaddr.in6, native_addr);
+                std.log.debug("native peer_address v6 family={}, port={}, flowinfo={}, addr={}, scope_id={}", .{
+                    v6addr.family,
+                    v6addr.port,
+                    v6addr.flowinfo,
+                    std.fmt.fmtSliceHexLower(v6addr.addr[0..]),
+                    v6addr.scope_id,
+                });
+            },
+            else => {},
+        }
+    }
+
     const socket_domain: u32 = switch (peer_address) {
         .ipv4 => std.os.AF.INET,
         .ipv6 => std.os.AF.INET6,
     };
+    std.debug.print("socket_domain={}, socktype={}, protocol=0\n", .{
+        socket_domain,
+        std.os.SOCK.STREAM,
+    });
     const socket_peer = try Socket.init(socket_domain, std.os.SOCK.STREAM, 0, .{});
     defer socket_peer.deinit();
 

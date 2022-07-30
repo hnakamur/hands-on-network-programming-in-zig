@@ -2,9 +2,12 @@ const std = @import("std");
 const builtin = @import("builtin");
 const IPv6 = std.x.os.IPv6;
 const Socket = std.x.os.Socket;
+const SocketIpv6Ext = @import("lib").SocketIpv6Ext;
 const c = @cImport({
     @cInclude("time.h");
 });
+
+const log_level = std.log.debug;
 
 pub fn main() !void {
     const bind_address = Socket.Address.initIPv6(IPv6{
@@ -38,10 +41,7 @@ pub fn main() !void {
     );
     defer socket_listen.deinit();
 
-    // V6Only is need to set to be false explicitly on Windows for dual bind in IPv4 and IPv6.
-    if (builtin.os.tag == .linux or builtin.os.tag == .windows) {
-        try setV6Only(socket_listen, false);
-    }
+    try SocketIpv6Ext.setV6OnlyOrNop(socket_listen, false);
     try socket_listen.bind(bind_address);
     try socket_listen.listen(10);
     var conn = try socket_listen.accept(.{});
@@ -69,18 +69,4 @@ pub fn main() !void {
     const time_msg_len = std.mem.indexOfSentinel(u8, 0, time_msg);
     const bytes_sent2 = try conn.socket.write(time_msg[0..time_msg_len], 0);
     std.debug.print("Sent #2 {} of {} bytes.\n", .{ bytes_sent2, time_msg_len });
-}
-
-fn setV6Only(socket: Socket, enabled: bool) !void {
-    const level = if (builtin.os.tag == .windows)
-        41 // should be defined as std.os.windows.ws2_32.IPPROTO.IPV6
-    else
-        std.os.IPPROTO.IPV6;
-    const code = switch (builtin.os.tag) {
-        .windows => std.os.windows.ws2_32.IPV6_V6ONLY,
-        .linux => std.os.linux.IPV6.V6ONLY,
-        else => @panic("IPV6_ONLY is not supported for this OS"),
-    };
-    std.debug.print("setV6Only, level={}, code={}\n", .{ level, code });
-    return socket.setOption(level, code, std.mem.asBytes(&@as(u32, @boolToInt(enabled))));
 }

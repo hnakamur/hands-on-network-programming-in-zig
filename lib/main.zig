@@ -3,3 +3,4 @@ pub const FdSet = @import("select.zig").FdSet;
 pub const select = @import("select.zig").select;
 pub const parsePort = @import("socket_address.zig").parsePort;
 pub const parseSocketAddress = @import("socket_address.zig").parseSocketAddress;
+pub const SocketIpv6Ext = @import("SocketIpv6Ext.zig");

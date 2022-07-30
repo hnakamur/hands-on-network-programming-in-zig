@@ -50,6 +50,8 @@ fn getHostnamePortArgs(
     return true;
 }
 
+const log_level = std.log.debug;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer if (gpa.deinit()) @panic("leak");
@@ -113,6 +115,11 @@ pub fn main() !void {
         });
 
         std.debug.print("Creating socket...\n", .{});
+        std.debug.print("family={}, socktype={}, protocol={}\n", .{
+            peer_address.family,
+            peer_address.socktype,
+            peer_address.protocol,
+        });
         const socket_peer = ws2_32.socket(
             peer_address.family,
             peer_address.socktype,
@@ -121,6 +128,31 @@ pub fn main() !void {
         if (socket_peer == ws2_32.INVALID_SOCKET) {
             std.debug.print("socket() failed. ({})\n", .{WSAGetLastError()});
             return error.Socket;
+        }
+
+        {
+            const native_addr = @ptrCast(*const std.os.sockaddr, peer_address.addr.?);
+            switch (native_addr.family) {
+                std.os.AF.INET => {
+                    const v4addr = @intToPtr(*const std.os.sockaddr.in, @ptrToInt(native_addr));
+                    std.log.debug("native peer_address v4 family={}, port={}, addr={}", .{
+                        v4addr.family,
+                        v4addr.port,
+                        v4addr.addr,
+                    });
+                },
+                std.os.AF.INET6 => {
+                    const v6addr = @intToPtr(*const std.os.sockaddr.in6, @ptrToInt(native_addr));
+                    std.log.debug("native peer_address v6 family={}, port={}, flowinfo={}, addr={}, scope_id={}", .{
+                        v6addr.family,
+                        v6addr.port,
+                        v6addr.flowinfo,
+                        std.fmt.fmtSliceHexLower(v6addr.addr[0..]),
+                        v6addr.scope_id,
+                    });
+                },
+                else => {},
+            }
         }
 
         std.debug.print("Connecting...\n", .{});
