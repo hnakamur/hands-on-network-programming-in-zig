@@ -17,13 +17,13 @@ pub fn main() !void {
     var args = try Args.init(allocator);
     defer args.deinit(allocator);
 
-    if (args.args.len != 2) {
+    if (args.args.len != 3) {
         std.debug.print("Usage: tcp_client hostname port\n", .{});
         std.os.exit(2);
     }
 
-    const host = args.args[0];
-    const port = try parsePort(args.args[1]);
+    const host = args.args[1];
+    const port = try parsePort(args.args[2]);
     const peer_address = try SocketAddressExt.parse(host, port);
     std.debug.print("peer_address={}\n", .{peer_address});
 

@@ -16,12 +16,12 @@ pub fn main() !void {
     var args = try Args.init(allocator);
     defer args.deinit(allocator);
 
-    if (args.args.len != 1) {
+    if (args.args.len != 2) {
         std.debug.print("Usage: tcp_serve_toupper port\n", .{});
         std.os.exit(2);
     }
 
-    const port = try parsePort(args.args[0]);
+    const port = try parsePort(args.args[1]);
     const listen_address = try SocketAddressExt.parse("::", port);
     std.debug.print("listen_address={}\n", .{listen_address});
     const socket_domain: u32 = SocketAddressExt.toSocketDomain(listen_address);

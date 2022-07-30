@@ -8,8 +8,6 @@ pub fn init(allocator: std.mem.Allocator) !Args {
     var it = try std.process.argsWithAllocator(allocator);
     defer it.deinit();
 
-    _ = it.skip();
-
     var args_list = std.ArrayListUnmanaged([]const u8){};
     errdefer {
         for (args_list.items) |arg| allocator.free(arg);
