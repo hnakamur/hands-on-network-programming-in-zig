@@ -69,6 +69,9 @@ pub fn build(b: *std.build.Builder) void {
         .{ .exe_name = "time_server_dual", .src = "chap02/time_server_dual.zig" },
         .{ .exe_name = "tcp_client", .src = "chap03/tcp_client.zig" },
         .{ .exe_name = "tcp_serve_toupper", .src = "chap03/tcp_serve_toupper.zig" },
+        .{ .exe_name = "udp_client", .src = "chap04/udp_client.zig" },
+        .{ .exe_name = "udp_serve_toupper_simple", .src = "chap04/udp_serve_toupper_simple.zig" },
+        .{ .exe_name = "udp_serve_toupper", .src = "chap04/udp_serve_toupper.zig" },
     };
     for (exe_infos) |info| {
         const exe = b.addExecutable(info.exe_name, info.src);
