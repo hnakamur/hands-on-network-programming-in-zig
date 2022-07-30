@@ -58,6 +58,10 @@ pub const FdSet = struct {
         }
     }
 
+    pub fn copyFrom(self: *FdSet, other: *const FdSet) void {
+        self.* = other.*;
+    }
+
     pub fn clone(self: *const FdSet) FdSet {
         return .{ .bitset = self.bitset, .len = self.len };
     }
