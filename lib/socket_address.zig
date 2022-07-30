@@ -44,10 +44,18 @@ test "parseSocketAddress" {
     const Address = std.x.os.Socket.Address;
     const IPv4 = std.x.os.IPv4;
     const IPv6 = std.x.os.IPv6;
-    try testing.expectEqual(Address{ .ipv4 = .{ .host = IPv4.localhost, .port = 8080 } }, try parseSocketAddress("127.0.0.1", 8080));
-    try testing.expectEqual(Address{ .ipv6 = .{ .host = .{ .octets = IPv6.localhost_octets, .scope_id = 0 }, .port = 443 } }, try parseSocketAddress("::1", 443));
-    try testing.expectEqual(Address{ .ipv4 = .{ .host = IPv4.unspecified, .port = 8080 } }, try parseSocketAddress("0.0.0.0", 8080));
-    try testing.expectEqual(Address{ .ipv6 = .{ .host = .{ .octets = IPv6.unspecified_octets, .scope_id = 0 }, .port = 443 } }, try parseSocketAddress("::", 443));
+    try testing.expectEqual(Address{
+        .ipv4 = .{ .host = IPv4.localhost, .port = 8080 },
+    }, try parseSocketAddress("127.0.0.1", 8080));
+    try testing.expectEqual(Address{
+        .ipv6 = .{ .host = .{ .octets = IPv6.localhost_octets, .scope_id = 0 }, .port = 443 },
+    }, try parseSocketAddress("::1", 443));
+    try testing.expectEqual(Address{
+        .ipv4 = .{ .host = IPv4.unspecified, .port = 8080 },
+    }, try parseSocketAddress("0.0.0.0", 8080));
+    try testing.expectEqual(Address{
+        .ipv6 = .{ .host = .{ .octets = IPv6.unspecified_octets, .scope_id = 0 }, .port = 443 },
+    }, try parseSocketAddress("::", 443));
 
     try testing.expectError(error.InvalidIPAddressFormat, parseSocketAddress("localhost", 8080));
 }
