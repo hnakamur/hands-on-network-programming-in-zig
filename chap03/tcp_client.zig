@@ -5,7 +5,7 @@ const IPv6 = std.x.os.IPv6;
 const Socket = std.x.os.Socket;
 const Args = @import("lib").Args;
 const parsePort = @import("lib").parsePort;
-const parseSocketAddress = @import("lib").parseSocketAddress;
+const SocketAddressExt = @import("lib").SocketAddressExt;
 const FdSet = @import("lib").FdSet;
 const select = @import("lib").select;
 
@@ -24,7 +24,7 @@ pub fn main() !void {
 
     const host = args.args[0];
     const port = try parsePort(args.args[1]);
-    const peer_address = try parseSocketAddress(host, port);
+    const peer_address = try SocketAddressExt.parse(host, port);
     std.debug.print("peer_address={}\n", .{peer_address});
 
     {
@@ -52,10 +52,7 @@ pub fn main() !void {
         }
     }
 
-    const socket_domain: u32 = switch (peer_address) {
-        .ipv4 => std.os.AF.INET,
-        .ipv6 => std.os.AF.INET6,
-    };
+    const socket_domain: u32 = SocketAddressExt.toSocketDomain(peer_address);
     std.debug.print("socket_domain={}, socktype={}, protocol=0\n", .{
         socket_domain,
         std.os.SOCK.STREAM,
