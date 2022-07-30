@@ -2,7 +2,7 @@ const std = @import("std");
 
 const Args = @This();
 
-args: [][]const u8 = .{},
+args: []const []const u8 = .{},
 
 pub fn init(allocator: std.mem.Allocator) !Args {
     var it = try std.process.argsWithAllocator(allocator);
