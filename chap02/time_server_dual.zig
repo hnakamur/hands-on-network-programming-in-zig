@@ -2,6 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const IPv6 = std.x.os.IPv6;
 const Socket = std.x.os.Socket;
+const parseSocketAddress = @import("lib").parseSocketAddress;
 const SocketIpv6Ext = @import("lib").SocketIpv6Ext;
 const c = @cImport({
     @cInclude("time.h");
@@ -10,10 +11,7 @@ const c = @cImport({
 const log_level = std.log.debug;
 
 pub fn main() !void {
-    const bind_address = Socket.Address.initIPv6(IPv6{
-        .octets = IPv6.unspecified_octets,
-        .scope_id = 0, // bind failed on Windows if this is IPv6.no_scope_id
-    }, 8080);
+    const bind_address = try parseSocketAddress("::", 8080);
     std.debug.print("bind_address={}\n", .{bind_address});
     std.debug.print("bind_address.ipv6.port={}, addr={}, scope_id={}\n", .{
         bind_address.ipv6.port,
