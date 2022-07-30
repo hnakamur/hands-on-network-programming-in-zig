@@ -72,6 +72,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .exe_name = "udp_client", .src = "chap04/udp_client.zig" },
         .{ .exe_name = "udp_serve_toupper_simple", .src = "chap04/udp_serve_toupper_simple.zig" },
         .{ .exe_name = "udp_serve_toupper", .src = "chap04/udp_serve_toupper.zig" },
+        .{ .exe_name = "lookup", .src = "chap05/lookup.zig" },
     };
     for (exe_infos) |info| {
         const exe = b.addExecutable(info.exe_name, info.src);
