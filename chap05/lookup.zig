@@ -4,7 +4,7 @@ const Args = @import("lib").Args;
 const mystd = @import("lib").mystd;
 const winsock = @import("lib").winsock;
 
-const log_level = std.log.debug;
+pub const log_level: std.log.Level = .debug;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};

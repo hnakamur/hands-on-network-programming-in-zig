@@ -50,7 +50,7 @@ fn getHostnamePortArgs(
     return true;
 }
 
-const log_level = std.log.debug;
+pub const log_level: std.log.Level = .debug;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};

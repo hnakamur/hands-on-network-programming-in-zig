@@ -8,7 +8,7 @@ const c = @cImport({
     @cInclude("time.h");
 });
 
-const log_level = std.log.debug;
+pub const log_level: std.log.Level = .debug;
 
 pub fn main() !void {
     const bind_address = try SocketAddressExt.parse("::", 8080);
