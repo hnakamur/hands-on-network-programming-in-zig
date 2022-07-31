@@ -4,6 +4,8 @@ const ws2_32 = std.os.windows.ws2_32;
 const ws2_32_or_c = if (builtin.os.tag == .windows) ws2_32 else std.c;
 const ws2_32_or_os = if (builtin.os.tag == .windows) ws2_32 else std.os;
 
+pub const fmt = @import("fmt.zig");
+
 pub const net = struct {
     pub const parsePort = @import("socket_address.zig").parsePort;
     pub const SocketAddressExt = @import("socket_address.zig").SocketAddressExt;

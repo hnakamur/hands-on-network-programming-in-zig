@@ -1,18 +1,8 @@
 const std = @import("std");
+const mystd = @import("mystd.zig");
 
 pub fn parsePort(port_str: []const u8) error{InvalidPort}!u16 {
-    if (port_str.len == 0 or port_str.len > 5) {
-        return error.InvalidPort;
-    }
-    var port: u32 = 0;
-    for (port_str) |c| {
-        port *= 10;
-        port += std.fmt.charToDigit(c, 10) catch return error.InvalidPort;
-    }
-    if (port > std.math.maxInt(u16)) {
-        return error.InvalidPort;
-    }
-    return @truncate(u16, port);
+    return mystd.fmt.parseIntDigits(u16, port_str) catch return error.InvalidPort;
 }
 
 pub const SocketAddressExt = struct {
