@@ -2,7 +2,7 @@ const std = @import("std");
 const mystd = @import("mystd.zig");
 
 pub fn parsePort(port_str: []const u8) error{InvalidPort}!u16 {
-    return mystd.fmt.parseIntDigits(u16, port_str) catch return error.InvalidPort;
+    return mystd.fmt.parseIntDigits(u16, port_str, 10) catch return error.InvalidPort;
 }
 
 pub const SocketAddressExt = struct {

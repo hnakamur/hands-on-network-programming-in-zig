@@ -1,10 +1,10 @@
 const std = @import("std");
 
-pub fn parseIntDigits(comptime T: type, s: []const u8) !T {
-    return try parseIntDigitsWithMax(T, s, std.math.maxInt(T));
+pub fn parseIntDigits(comptime T: type, s: []const u8, radix: u8) !T {
+    return try parseIntDigitsWithMax(T, s, radix, std.math.maxInt(T));
 }
 
-pub fn parseIntDigitsWithMax(comptime T: type, s: []const u8, max: T) !T {
+pub fn parseIntDigitsWithMax(comptime T: type, s: []const u8, radix: u8, max: T) !T {
     if (s.len == 0) {
         return error.Empty;
     }
@@ -12,11 +12,11 @@ pub fn parseIntDigitsWithMax(comptime T: type, s: []const u8, max: T) !T {
     var ret: T = 0;
     var i: usize = 0;
     while (i < s.len) : (i += 1) {
-        if (ret > max / 10) {
+        if (ret > max / radix) {
             return error.Overflow;
         }
-        ret *= 10;
-        const d = std.fmt.charToDigit(s[i], 10) catch return error.NotDigit;
+        ret *= radix;
+        const d = std.fmt.charToDigit(s[i], radix) catch return error.NotDigit;
         if (ret > max - d) {
             return error.Overflow;
         }
@@ -34,16 +34,16 @@ pub fn getDigitsSpan(s: []const u8) []const u8 {
 const testing = std.testing;
 
 test "parseIntDigits" {
-    try testing.expectEqual(@as(u16, 65535), try parseIntDigits(u16, "65535"));
+    try testing.expectEqual(@as(u16, 65535), try parseIntDigits(u16, "65535", 10));
 
-    try testing.expectError(error.Empty, parseIntDigits(u16, ""));
-    try testing.expectError(error.Overflow, parseIntDigits(u16, "65536"));
-    try testing.expectError(error.Overflow, parseIntDigits(u16, "70000"));
-    try testing.expectError(error.NotDigit, parseIntDigits(u16, "0x24"));
+    try testing.expectError(error.Empty, parseIntDigits(u16, "", 10));
+    try testing.expectError(error.Overflow, parseIntDigits(u16, "65536", 10));
+    try testing.expectError(error.Overflow, parseIntDigits(u16, "70000", 10));
+    try testing.expectError(error.NotDigit, parseIntDigits(u16, "0x24", 10));
 }
 
 test "parseIntDigitsWithMax" {
-    try testing.expectEqual(@as(u32, 60000), try parseIntDigitsWithMax(u32, "60000", 60000));
-    try testing.expectEqual(@as(u32, 65535), try parseIntDigitsWithMax(u32, "65535", std.math.maxInt(u16)));
-    try testing.expectError(error.Overflow, parseIntDigitsWithMax(u32, "65536", std.math.maxInt(u16)));
+    try testing.expectEqual(@as(u32, 60000), try parseIntDigitsWithMax(u32, "60000", 10, 60000));
+    try testing.expectEqual(@as(u32, 65535), try parseIntDigitsWithMax(u32, "65535", 10, std.math.maxInt(u16)));
+    try testing.expectError(error.Overflow, parseIntDigitsWithMax(u32, "65536", 10, std.math.maxInt(u16)));
 }
