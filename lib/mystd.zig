@@ -4,6 +4,17 @@ const ws2_32 = std.os.windows.ws2_32;
 const ws2_32_or_c = if (builtin.os.tag == .windows) ws2_32 else std.c;
 const ws2_32_or_os = if (builtin.os.tag == .windows) ws2_32 else std.os;
 
+pub const net = struct {
+    pub const parsePort = @import("socket_address.zig").parsePort;
+    pub const SocketAddressExt = @import("socket_address.zig").SocketAddressExt;
+    pub const SocketIpv6Ext = @import("SocketIpv6Ext.zig");
+    pub const SocketUdpExt = @import("SocketUdpExt.zig");
+};
+
+pub const process = struct {
+    pub const Args = @import("Args.zig");
+};
+
 pub const os = struct {
     pub const AI = switch (builtin.os.tag) {
         .windows => ws2_32.AI,
@@ -12,7 +23,7 @@ pub const os = struct {
     };
 
     pub const NI = switch (builtin.os.tag) {
-        .windows => ws2_32.NI,
+        .windows => windows.NI,
         .macos, .ios, .watchos, .tvos => darwin.NI,
         else => std.c.NI,
     };
@@ -121,7 +132,9 @@ pub const os = struct {
         }
     }
 
-    const windows = struct {
+    pub const windows = struct {
+        pub const winsock = @import("winsock.zig");
+
         pub const NI = struct {
             pub const NUMERICHOST = ws2_32.NI_NUMERICHOST;
             pub const NUMERICSERV = ws2_32.NI_NUMERICSERV;

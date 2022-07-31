@@ -8,7 +8,7 @@ pub fn recvfrom(
     socket: Socket,
     buf: []u8,
     flags: u32,
-    src_address: *Socket.Address,
+    src_address: ?*Socket.Address,
 ) std.os.RecvFromError!usize {
     var src_addr: std.os.sockaddr.storage = undefined;
     var addrlen: std.os.socklen_t = @sizeOf(@TypeOf(src_addr));
@@ -19,7 +19,9 @@ pub fn recvfrom(
         @ptrCast(*std.os.sockaddr, &src_addr),
         &addrlen,
     );
-    src_address.* = Socket.Address.fromNative(@ptrCast(*align(4) const std.os.sockaddr, &src_addr));
+    if (src_address) |addr| {
+        addr.* = Socket.Address.fromNative(@ptrCast(*align(4) const std.os.sockaddr, &src_addr));
+    }
     return n;
 }
 
