@@ -5,19 +5,17 @@ const ws2_32_or_c = if (builtin.os.tag == .windows) ws2_32 else std.c;
 const ws2_32_or_os = if (builtin.os.tag == .windows) ws2_32 else std.os;
 
 pub const os = struct {
-    pub const AI = ws2_32_or_c.AI;
+    pub const AI = switch (builtin.os.tag) {
+        .windows => ws2_32.AI,
+        .macos, .ios, .watchos, .tvos => darwin.AI,
+        else => std.c.AI,
+    };
 
-    pub const NI = if (builtin.os.tag == .windows)
-        struct {
-            pub const NUMERICHOST = ws2_32.NI_NUMERICHOST;
-            pub const NUMERICSERV = ws2_32.NI_NUMERICSERV;
-            pub const NOFQDN = ws2_32.NI_NOFQDN;
-            pub const NAMEREQD = ws2_32.NI_NAMEREQD;
-            pub const DGRAM = ws2_32.NI_DGRAM;
-            pub const NUMERICSCOPE = 0x100;
-        }
-    else
-        std.c.NI;
+    pub const NI = switch (builtin.os.tag) {
+        .windows => ws2_32.NI,
+        .macos, .ios, .watchos, .tvos => darwin.NI,
+        else => std.c.NI,
+    };
 
     pub const freeaddrinfo = ws2_32_or_c.freeaddrinfo;
     pub const sockaddr = ws2_32_or_c.sockaddr;
@@ -90,11 +88,12 @@ pub const os = struct {
                 .OVERFLOW => error.AddrInfoOverflow,
                 .NODATA => error.AddrInfoNoData,
                 .ADDRFAMILY => error.AddrInfoAddrFamily,
-                .INPROGRESS => error.AddrInfoAddrInProgress,
-                .CANCELED => error.AddrInfoAddrCanceled,
-                .ALLDONE => error.AddrInfoAllDone,
-                .INTR => error.AddrInfoIntr,
-                .IDN_ENCODE => error.AddrInfoIdnEncode,
+                // These values are not defined on macOS.
+                // .INPROGRESS => error.AddrInfoAddrInProgress,
+                // .CANCELED => error.AddrInfoAddrCanceled,
+                // .ALLDONE => error.AddrInfoAllDone,
+                // .INTR => error.AddrInfoIntr,
+                // .IDN_ENCODE => error.AddrInfoIdnEncode,
                 else => error.AddrInfoOther,
             };
         }
@@ -123,6 +122,15 @@ pub const os = struct {
     }
 
     const windows = struct {
+        pub const NI = struct {
+            pub const NUMERICHOST = ws2_32.NI_NUMERICHOST;
+            pub const NUMERICSERV = ws2_32.NI_NUMERICSERV;
+            pub const NOFQDN = ws2_32.NI_NOFQDN;
+            pub const NAMEREQD = ws2_32.NI_NAMEREQD;
+            pub const DGRAM = ws2_32.NI_DGRAM;
+            pub const NUMERICSCOPE = 0x100;
+        };
+
         fn getnameinfo(
             addr: *const sockaddr,
             addrlen: usize,
@@ -166,6 +174,27 @@ pub const os = struct {
             );
             try posixCheckEaiError(rc);
         }
+    };
+
+    const darwin = struct {
+        pub const AI = struct {
+            pub const PASSIVE = 0x00000001;
+            pub const CANONNAME = 0x00000002;
+            pub const NUMERICHOST = 0x00000004;
+            pub const ALL = 0x00000100;
+            pub const ADDRCONFIG = 0x00000400;
+            pub const V4MAPPED = 0x00000800;
+            pub const NUMERICSERV = 0x00001000;
+        };
+
+        pub const NI = struct {
+            pub const NOFQDN = 0x00000001;
+            pub const NUMERICHOST = 0x00000002;
+            pub const NAMEREQD = 0x00000004;
+            pub const NUMERICSERV = 0x00000008;
+            pub const NUMERICSCOPE = 0x00000100;
+            pub const DGRAM = 0x00000010;
+        };
     };
 };
 
