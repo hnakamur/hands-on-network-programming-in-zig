@@ -20,6 +20,7 @@ fn parseUrl(url: []const u8, hostname: *[]const u8, port: *[]const u8, path: *[]
     hostname.* = url[start..off];
 
     port.* = if (url[off] == ':') blk: {
+        off += 1;
         start = off;
         while (off < url.len and url[off] != '/' and url[off] != '#') : (off += 1) {}
         break :blk url[start..off];
@@ -43,7 +44,7 @@ fn connectToHost(
     port_str: []const u8,
 ) !std.x.os.Socket {
     var hints: mystd.os.addrinfo = std.mem.zeroes(mystd.os.addrinfo);
-    hints.flags = mystd.os.AI.ALL;
+    hints.socktype = std.os.SOCK.STREAM;
     var native_peer_address: *mystd.os.addrinfo = undefined;
     try mystd.os.getaddrinfo(allocator, hostname, port_str, &hints, &native_peer_address);
     defer mystd.os.freeaddrinfo(native_peer_address);

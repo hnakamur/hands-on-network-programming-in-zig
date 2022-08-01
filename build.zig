@@ -75,6 +75,7 @@ pub fn build(b: *std.build.Builder) void {
         .{ .exe_name = "lookup", .src = "chap05/lookup.zig" },
         .{ .exe_name = "dns_query", .src = "chap05/dns_query.zig" },
         .{ .exe_name = "web_get", .src = "chap06/web_get.zig" },
+        .{ .exe_name = "web_server", .src = "chap07/web_server.zig" },
     };
     for (exe_infos) |info| {
         const exe = b.addExecutable(info.exe_name, info.src);
