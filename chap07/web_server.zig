@@ -10,48 +10,34 @@ const ClientInfo = struct {
     conn: std.x.os.Socket.Connection,
     request: [max_request_size]u8 = undefined,
     received: usize = 0,
-    next: ?*ClientInfo = null,
 };
 
-var clients: ?*ClientInfo = null;
+const ConnectionAddressMap = std.AutoArrayHashMap(std.os.socket_t, ClientInfo);
 
-fn appendClient(allocator: std.mem.Allocator, conn: std.x.os.Socket.Connection) !*ClientInfo {
-    var ci = clients;
-    while (ci) |ci2| {
-        if (ci2.next == null) {
-            break;
-        }
-        ci = ci2.next;
+fn dropClient(
+    connection_addresses: *ConnectionAddressMap,
+    client: *ClientInfo,
+) !void {
+    client.conn.socket.deinit();
+    if (!connection_addresses.swapRemove(client.conn.socket.fd)) {
+        return error.DropClientNotFound;
     }
-
-    var n = try allocator.create(ClientInfo);
-    n.* = .{
-        .conn = conn,
-        .received = 0,
-        .next = null,
-    };
-    if (ci) |ci2| {
-        ci2.next = n;
-    } else {
-        clients = n;
-    }
-    return n;
 }
 
-fn dropClient(allocator: std.mem.Allocator, client: *ClientInfo) !void {
-    client.conn.socket.deinit();
+fn waitOnClients(
+    server: std.x.os.Socket,
+    connection_addresses: *ConnectionAddressMap,
+) !mystd.net.select.FdSet {
+    var read_fds = mystd.net.select.FdSet.init();
+    read_fds.set(server.fd);
 
-    var p = &clients;
-    while (p.*) |c| {
-        if (c == client) {
-            p.* = client.next;
-            allocator.destroy(client);
-            std.log.debug("dropClient {*}, clients={*}", .{ client, clients });
-            return;
-        }
-        p = &c.next;
+    var it = connection_addresses.iterator();
+    while (it.next()) |entry| {
+        read_fds.set(entry.key_ptr.*);
     }
-    return error.DropClientNotFound;
+
+    _ = try mystd.net.select.select(&read_fds, null, null, 5 * std.time.ns_per_s);
+    return read_fds;
 }
 
 fn createSocket(host: []const u8, port_str: []const u8) !std.x.os.Socket {
@@ -70,20 +56,6 @@ fn createSocket(host: []const u8, port_str: []const u8) !std.x.os.Socket {
     try socket_listen.listen(1024);
 
     return socket_listen;
-}
-
-fn waitOnClients(server: std.x.os.Socket) !mystd.net.select.FdSet {
-    var read_fds = mystd.net.select.FdSet.init();
-    read_fds.set(server.fd);
-
-    var ci = clients;
-    while (ci) |ci2| {
-        read_fds.set(ci2.conn.socket.fd);
-        ci = ci2.next;
-    }
-
-    _ = try mystd.net.select.select(&read_fds, null, null, 5 * std.time.ns_per_s);
-    return read_fds;
 }
 
 fn getContentType(path: []const u8) []const u8 {
@@ -107,36 +79,36 @@ fn getContentType(path: []const u8) []const u8 {
     return "application/octet-stream";
 }
 
-fn send400(allocator: std.mem.Allocator, client: *ClientInfo) !void {
+fn send400(connection_addresses: *ConnectionAddressMap, client: *ClientInfo) !void {
     const msg = "HTTP/1.1 400 Bad Request\r\n" ++
         "Connection: close\r\n" ++
         "Content-Length: 11\r\n\r\nBad Request";
     const bytes_sent = try client.conn.socket.write(msg, 0);
     std.log.debug("send400 sent {} of {} bytes.", .{ bytes_sent, msg.len });
-    try dropClient(allocator, client);
+    try dropClient(connection_addresses, client);
 }
 
-fn send404(allocator: std.mem.Allocator, client: *ClientInfo) !void {
+fn send404(connection_addresses: *ConnectionAddressMap, client: *ClientInfo) !void {
     const msg = "HTTP/1.1 404 Not Found\r\n" ++
         "Connection: close\r\n" ++
         "Content-Length: 9\r\n\r\nNot Found";
     const bytes_sent = try client.conn.socket.write(msg, 0);
     std.log.debug("send400 sent {} of {} bytes.", .{ bytes_sent, msg.len });
-    try dropClient(allocator, client);
+    try dropClient(connection_addresses, client);
 }
 
-fn serveResource(allocator: std.mem.Allocator, client: *ClientInfo, path: []const u8) !void {
+fn serveResource(connection_addresses: *ConnectionAddressMap, client: *ClientInfo, path: []const u8) !void {
     std.log.debug("serveResource {} {s}", .{ client.conn.address, path });
 
     const path2 = if (std.mem.eql(u8, path, "/")) "/index.html" else path;
     std.log.debug("path2={s}", .{path2});
     if (path2.len > 100) {
-        try send400(allocator, client);
+        try send400(connection_addresses, client);
         return;
     }
 
     if (std.mem.indexOf(u8, path2, "..")) |_| {
-        try send404(allocator, client);
+        try send404(connection_addresses, client);
         return;
     }
 
@@ -151,7 +123,7 @@ fn serveResource(allocator: std.mem.Allocator, client: *ClientInfo, path: []cons
     std.log.debug("rel_path={s}", .{rel_path});
 
     var file = std.fs.cwd().openFile(rel_path, .{}) catch {
-        try send404(allocator, client);
+        try send404(connection_addresses, client);
         return;
     };
     defer file.close();
@@ -180,7 +152,7 @@ fn serveResource(allocator: std.mem.Allocator, client: *ClientInfo, path: []cons
         std.log.debug("Sent body chunk {} of {} bytes", .{ bytes_sent, r });
     }
 
-    try dropClient(allocator, client);
+    try dropClient(connection_addresses, client);
 }
 
 pub fn main() !void {
@@ -202,32 +174,32 @@ pub fn main() !void {
 
     const socket_server = try createSocket("::", args.args[1]);
     defer socket_server.deinit();
+    var connection_addresses = ConnectionAddressMap.init(allocator);
+    defer connection_addresses.deinit();
 
     while (true) {
-        var read_fds = try waitOnClients(socket_server);
+        var read_fds = try waitOnClients(socket_server, &connection_addresses);
         if (read_fds.isSet(socket_server.fd)) {
             const conn = try socket_server.accept(.{});
             std.log.debug("New connection from {}.", .{conn.address});
-            const client = try appendClient(allocator, conn);
-            std.log.debug("Client appended {*}.", .{client});
+            const client = ClientInfo{ .conn = conn };
+            try connection_addresses.put(conn.socket.fd, client);
         }
 
-        var client = clients;
-        std.log.debug("start loop clients {*}", .{client});
-        while (client) |cli| {
+        var it = connection_addresses.iterator();
+        while (it.next()) |entry| {
+            const cli = entry.value_ptr;
             std.log.debug("loop cli {*}", .{cli});
-            const next = cli.next;
             if (read_fds.isSet(cli.conn.socket.fd)) {
                 if (cli.received == max_request_size) {
-                    try send400(allocator, cli);
-                    client = next;
+                    try send400(&connection_addresses, cli);
                     continue;
                 }
 
                 const r = try cli.conn.socket.read(cli.request[cli.received..], 0);
                 if (r == 0) {
                     std.debug.print("Unexpected disconnect from {}.\n", .{cli.conn.address});
-                    try dropClient(allocator, cli);
+                    try dropClient(&connection_addresses, cli);
                 } else {
                     cli.received += r;
                     if (std.mem.indexOf(u8, cli.request[0..], "\r\n\r\n")) |_| {
@@ -240,20 +212,19 @@ pub fn main() !void {
                                 ' ',
                             )) |path_end| {
                                 try serveResource(
-                                    allocator,
+                                    &connection_addresses,
                                     cli,
                                     cli.request[path_start..path_end],
                                 );
                             } else {
-                                try send400(allocator, cli);
+                                try send400(&connection_addresses, cli);
                             }
                         } else {
-                            try send400(allocator, cli);
+                            try send400(&connection_addresses, cli);
                         }
                     }
                 }
             }
-            client = next;
         }
     }
 }
