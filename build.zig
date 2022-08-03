@@ -65,25 +65,61 @@ pub fn build(b: *std.build.Builder) void {
     lib.linkLibC();
     lib.install();
 
-    const exe_infos = [_]BuildExeInfo{
-        .{ .exe_name = "time_server_dual", .src = "chap02/time_server_dual.zig" },
-        .{ .exe_name = "tcp_client", .src = "chap03/tcp_client.zig" },
-        .{ .exe_name = "tcp_serve_toupper", .src = "chap03/tcp_serve_toupper.zig" },
-        .{ .exe_name = "udp_client", .src = "chap04/udp_client.zig" },
-        .{ .exe_name = "udp_serve_toupper_simple", .src = "chap04/udp_serve_toupper_simple.zig" },
-        .{ .exe_name = "udp_serve_toupper", .src = "chap04/udp_serve_toupper.zig" },
-        .{ .exe_name = "lookup", .src = "chap05/lookup.zig" },
-        .{ .exe_name = "dns_query", .src = "chap05/dns_query.zig" },
-        .{ .exe_name = "web_get", .src = "chap06/web_get.zig" },
-        .{ .exe_name = "web_server", .src = "chap07/web_server.zig" },
-    };
-    for (exe_infos) |info| {
-        const exe = b.addExecutable(info.exe_name, info.src);
-        exe.setTarget(target);
-        exe.setBuildMode(mode);
-        exe.linkLibC();
-        exe.addPackage(pkgs.lib);
-        exe.install();
+    {
+        const exe_infos = [_]BuildExeInfo{
+            .{ .exe_name = "time_server_dual", .src = "chap02/time_server_dual.zig" },
+            .{ .exe_name = "tcp_client", .src = "chap03/tcp_client.zig" },
+            .{ .exe_name = "tcp_serve_toupper", .src = "chap03/tcp_serve_toupper.zig" },
+            .{ .exe_name = "udp_client", .src = "chap04/udp_client.zig" },
+            .{ .exe_name = "udp_serve_toupper_simple", .src = "chap04/udp_serve_toupper_simple.zig" },
+            .{ .exe_name = "udp_serve_toupper", .src = "chap04/udp_serve_toupper.zig" },
+            .{ .exe_name = "lookup", .src = "chap05/lookup.zig" },
+            .{ .exe_name = "dns_query", .src = "chap05/dns_query.zig" },
+            .{ .exe_name = "web_get", .src = "chap06/web_get.zig" },
+            .{ .exe_name = "web_server", .src = "chap07/web_server.zig" },
+        };
+        for (exe_infos) |info| {
+            const exe = b.addExecutable(info.exe_name, info.src);
+            exe.setTarget(target);
+            exe.setBuildMode(mode);
+            exe.linkLibC();
+            exe.addPackage(pkgs.lib);
+            exe.install();
+        }
+    }
+
+    const openssl_path = b.option([]const u8, "openssl-path", "OpenSSL") orelse "C:\\OpenSSL-Win64";
+
+    {
+        const exe_infos = [_]BuildExeInfo{
+            .{ .exe_name = "openssl_version", .src = "chap09/openssl_version.zig" },
+        };
+        for (exe_infos) |info| {
+            const exe = b.addExecutable(info.exe_name, info.src);
+            exe.setTarget(target);
+            exe.setBuildMode(mode);
+            exe.linkLibC();
+            if (builtin.os.tag == .windows) {
+                var include_path = std.fs.path.join(b.allocator, &[_][]const u8{
+                    openssl_path, "include"
+                }) catch unreachable;
+                defer b.allocator.free(include_path);
+                exe.addSystemIncludePath(include_path);
+
+                var lib_path = std.fs.path.join(b.allocator, &[_][]const u8{
+                    openssl_path, "lib"
+                }) catch unreachable;
+                defer b.allocator.free(lib_path);
+                exe.addLibraryPath(lib_path);
+
+                exe.linkSystemLibrary("libcrypto");
+                exe.linkSystemLibrary("libssl");
+            } else {
+                exe.linkSystemLibrary("crypto");
+            }
+            exe.addPackage(pkgs.lib);
+            exe.install();
+        }
     }
 
     const infos = [_]BuildRunStepInfo{
