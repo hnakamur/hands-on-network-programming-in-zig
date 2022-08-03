@@ -93,6 +93,7 @@ pub fn build(b: *std.build.Builder) void {
     {
         const exe_infos = [_]BuildExeInfo{
             .{ .exe_name = "openssl_version", .src = "chap09/openssl_version.zig" },
+            .{ .exe_name = "https_simple", .src = "chap09/https_simple.zig" },
         };
         for (exe_infos) |info| {
             const exe = b.addExecutable(info.exe_name, info.src);
@@ -116,6 +117,7 @@ pub fn build(b: *std.build.Builder) void {
                 exe.linkSystemLibrary("libssl");
             } else {
                 exe.linkSystemLibrary("crypto");
+                exe.linkSystemLibrary("ssl");
             }
             exe.addPackage(pkgs.lib);
             exe.install();
