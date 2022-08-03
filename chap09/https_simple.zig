@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const mystd = @import("lib").mystd;
 const c = @cImport({
     @cInclude("openssl/ssl.h");
@@ -80,17 +81,17 @@ pub fn main() !void {
     // if (SSL_set_tlsext_host_name(ssl.?, hostname_z) == 0) {
     if (SSL_set_tlsext_host_name(ssl.?, hostname_z) == 0) {
         std.log.err("SSL_set_tlsext_host_name() failed.", .{});
-        c.ERR_print_errors_fp(c.stderr);
+        ERR_print_errors_stderr();
         std.os.exit(1);
     }
 
-    if (c.SSL_set_fd(ssl.?, server.fd) == 0) {
+    if (c.SSL_set_fd(ssl.?, sockFdToCInt(server.fd)) == 0) {
         std.log.err("SSL_set_fd() failed.", .{});
         std.os.exit(1);
     }
     if (c.SSL_connect(ssl.?) == -1) {
         std.log.err("SSL_connect() failed.", .{});
-        c.ERR_print_errors_fp(c.stderr);
+        ERR_print_errors_stderr();
         std.os.exit(1);
     }
 
@@ -156,4 +157,17 @@ fn SSL_set_tlsext_host_name(ssl: *c.SSL, hostname: [:0]u8) c_long {
         c.TLSEXT_NAMETYPE_host_name,
         @ptrCast(*anyopaque, hostname),
     );
+}
+
+fn ERR_print_errors_stderr() void {
+    if (builtin.os.tag != .windows) {
+        c.ERR_print_errors_fp(c.stderr);
+    }
+}
+
+fn sockFdToCInt(sockfd: std.os.socket_t) c_int {
+    return if (builtin.os.tag == .windows)
+        @intCast(c_int, @ptrToInt(sockfd))
+    else
+        @intCast(c_int, sockfd);
 }
