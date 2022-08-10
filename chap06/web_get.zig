@@ -172,6 +172,7 @@ pub fn main() !void {
                                 header[length_start..length_end],
                                 10,
                             );
+                            remaining = content_length.?;
                         } else {
                             std.debug.print("content-length header does not end with CRLF.", .{});
                             std.os.exit(1);
@@ -186,14 +187,19 @@ pub fn main() !void {
                     } else {
                         encoding = .connection;
                     }
+                    std.log.debug("set encoding={}", .{encoding});
                     std.debug.print("Received body:\n", .{});
                 }
             }
 
             if (seen_header_end) {
+                std.log.debug(
+                    "seen_header_end=true, encoding={}, off={}, remaining={}, header.len={}",
+                    .{ encoding, off, remaining, header.len },
+                );
                 switch (encoding) {
                     .length => {
-                        if (off >= remaining) {
+                        if (off - header.len >= remaining) {
                             std.debug.print("{s}", .{response[header.len..off]});
                             break;
                         }
